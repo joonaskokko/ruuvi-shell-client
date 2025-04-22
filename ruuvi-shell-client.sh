@@ -77,8 +77,8 @@ while true; do
 		
 		# Round values to 2 decimals
 		TEMPERATURE=$(printf "%.2f" $TEMPERATURE)
-		TEMPERATURE_MIN=$(printf "%.2f" $TEMPERATURE)
-		TEMPERATURE_MAX=$(printf "%.2f" $TEMPERATURE)
+		TEMPERATURE_MIN=$(printf "%.2f" $TEMPERATURE_MIN)
+		TEMPERATURE_MAX=$(printf "%.2f" $TEMPERATURE_MAX)
 		HUMIDITY=$(printf "%.2f" $HUMIDITY)
 		
 		# Calculate time difference.
