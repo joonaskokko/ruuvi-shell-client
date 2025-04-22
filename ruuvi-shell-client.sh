@@ -11,10 +11,19 @@ LC_NUMERIC=C
 
 # Color output commands.
 GREEN="$(tput bold)$(tput setaf 2)"
+DIM_GREEN="$(tput setaf 2)"
 DIM="$(tput setaf 7)"
 WHITE="$(tput bold)$(tput setaf 7)"
 RED="$(tput bold)$(tput setaf 1)"
 RESET="$(tput sgr0)"
+
+# Trend symbols.
+SYMBOL_EQUAL="▸"
+SYMBOL_INCREASE="▴"
+SYMBOL_DECREASE="▾"
+
+# Low voltage threshold.
+LOW_VOLTAGE_THRESHOLD="2.5"
 
 # Load settings file if it exists.
 [[ -f settings ]] && source settings
@@ -54,7 +63,11 @@ while true; do
 		ID=$(echo "$SENSOR" | jq -r '.id')
 		NAME=$(echo "$SENSOR" | jq -r '.tag_name')
 		TEMPERATURE=$(echo "$SENSOR" | jq -r '.temperature')
+		TEMPERATURE_MIN=$(echo "$SENSOR" | jq -r '.temperature_min')
+		TEMPERATURE_MAX=$(echo "$SENSOR" | jq -r '.temperature_max')
+		TEMPERATURE_TREND=$(echo "$SENSOR" | jq -r '.temperature_trend')
 		HUMIDITY=$(echo "$SENSOR" | jq -r '.humidity')
+		HUMIDITY_TREND=$(echo "$SENSOR" | jq -r '.humidity_trend')
 		DATETIME=$(echo "$SENSOR" | jq -r '.datetime')
 		VOLTAGE=$(echo "$SENSOR" | jq -r '.voltage')
 		BATTERY_LOW=$(echo "$SENSOR" | jq -r '.battery_low')
@@ -64,6 +77,8 @@ while true; do
 		
 		# Round values to 2 decimals
 		TEMPERATURE=$(printf "%.2f" $TEMPERATURE)
+		TEMPERATURE_MIN=$(printf "%.2f" $TEMPERATURE)
+		TEMPERATURE_MAX=$(printf "%.2f" $TEMPERATURE)
 		HUMIDITY=$(printf "%.2f" $HUMIDITY)
 		
 		# Calculate time difference.
@@ -88,7 +103,7 @@ while true; do
 		
 		# Handle low battery warning. Try BATTERY_LOW first, then VOLTAGE.
 		if { [ "$BATTERY" != null ] && [ "$BATTERY_LOW" = true ]; } ||
-			{ [ "$VOLTAGE" != null ] && [ "$(echo "$VOLTAGE < 2.5" | bc -l)" -eq 1 ]; }; then
+			{ [ "$VOLTAGE" != null ] && [ "$(echo "$VOLTAGE < $LOW_VOLTAGE_THRESHOLD" | bc -l)" -eq 1 ]; }; then
 
 			NAME="${NAME} ${RESET}${RED}Battery low${RESET}"
 		fi
@@ -98,9 +113,53 @@ while true; do
 			TEMPERATURE="+${TEMPERATURE}"
 		fi
 		
+		# Add temperature trend.
+		TEMPERATURE_SYMBOL=""
+		if [ "$TEMPERATURE_TREND" != null ]; then
+			TEMPERATURE_SYMBOL="$SYMBOL_EQUAL"
+			
+			if [[ TEMPERATURE_TREND -eq 1 ]]; then
+				TEMPERATURE_SYMBOL="$SYMBOL_INCREASE"
+			elif [[ TEMPERATURE_TREND -eq -1 ]]; then
+				TEMPERATURE_SYMBOL="$SYMBOL_DECREASE"
+			fi
+		fi
+		
+		# Add humidity trend.
+		HUMIDITY_SYMBOL=""
+		
+		if [ "$HUMIDITY_TREND" != null ]; then
+			HUMIDITY_SYMBOL="$SYMBOL_EQUAL"
+			
+			if [[ HUMIDITY_TREND -eq 1 ]]; then
+				HUMIDITY_SYMBOL="$SYMBOL_INCREASE"
+			elif [[ HUMIDITY_TREND -eq -1 ]]; then
+				HUMIDITY_SYMBOL="$SYMBOL_DECREASE"
+			fi
+		fi
+		
+		# Temperature min/max
+		if { [ "$TEMPERATURE_MIN" != null ] && [ "$TEMPERATURE_MAX" != null ]; }; then
+			# Add "+" to positive temperatures.
+			if [ "$(echo "$TEMPERATURE_MIN > 0" | bc -l)" -eq 1 ]; then
+				TEMPERATURE_MIN="+${TEMPERATURE_MIN}"
+			fi
+		
+			if [ "$(echo "$TEMPERATURE_MAX > 0" | bc -l)" -eq 1 ]; then
+				TEMPERATURE_MAX="+${TEMPERATURE_MAX}"
+			fi
+			
+			TEMPERATURE_SCALE="${TEMPERATURE_MIN}…${TEMPERATURE_MAX}°C"
+		fi
+		
 		# Display the stuff.
 		echo -e "${GREEN}${NAME}${RESET}"
-		echo -e "${WHITE}${TEMPERATURE}°C ${WHITE}${HUMIDITY}%${RESET}"
+		echo -e "${WHITE}${TEMPERATURE}°C${DIM}${TEMPERATURE_SYMBOL} ${WHITE}${HUMIDITY}%${DIM}${HUMIDITY_SYMBOL}${RESET}"
+		
+		if [ "$TEMPERATURE_SCALE" != null ]; then
+			echo -e "${DIM}${TEMPERATURE_SCALE}"
+		fi
+		
 		echo -e "${DIM}Updated: ${UPDATED}${RESET}"
 		echo ""
 	done

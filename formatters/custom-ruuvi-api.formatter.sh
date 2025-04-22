@@ -6,8 +6,12 @@ parse_json() {
 				{
 						id,
 						tag_name, 
-						temperature, 
-						humidity, 
+						temperature,
+						temperature_min,
+						temperature_max,
+						temperature_trend,
+						humidity,
+						humidity_trend,
 						datetime, 
 						battery_low
 				}
