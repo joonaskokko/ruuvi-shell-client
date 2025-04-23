@@ -154,7 +154,7 @@ while true; do
 		
 		# Display the stuff.
 		echo -e "${GREEN}${NAME}${RESET}"
-		echo -e "${WHITE}${TEMPERATURE}°C${DIM}${TEMPERATURE_SYMBOL} ${WHITE}${HUMIDITY}%${DIM}${HUMIDITY_SYMBOL}${RESET}"
+		echo -e "${WHITE}${TEMPERATURE}°C${GREEN}${TEMPERATURE_SYMBOL} ${WHITE}${HUMIDITY}%${GREEN}${HUMIDITY_SYMBOL}${RESET}"
 		
 		if [ "$TEMPERATURE_SCALE" != null ]; then
 			echo -e "${DIM}${TEMPERATURE_SCALE}"
